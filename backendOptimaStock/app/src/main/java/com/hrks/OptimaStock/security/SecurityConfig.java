@@ -15,6 +15,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
@@ -26,12 +32,12 @@ public class SecurityConfig {
     @Autowired
     private CustomUserDetailsService userDetailsService;
 
-    /**
-     * Configuración principal de seguridad
-     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // Habilitar CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 // Deshabilitar CSRF ya que usamos JWT (stateless)
                 .csrf(csrf -> csrf.disable())
 
@@ -39,12 +45,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Endpoints públicos (autenticación)
                         .requestMatchers("/auth/**").permitAll()
-
-                        // Endpoints públicos de cotizaciones (desde sitio web)
-                        .requestMatchers(HttpMethod.POST, "/api/quotes").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/quotes/*/pdf").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/quotes/*").permitAll()
-                        .requestMatchers("/api/quotes/**").hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.GET, "/category/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/category/**").permitAll()
 
                         // Endpoints protegidos por rol
                         .requestMatchers(HttpMethod.DELETE, "/product/**").hasRole("ADMIN")
@@ -57,30 +59,45 @@ public class SecurityConfig {
                         .requestMatchers("/sale/**").hasAnyRole("ADMIN", "EMPLEADO")
                         .requestMatchers("/user/**").hasRole("ADMIN")
 
-                        // Resto de endpoints requieren autenticación
+                        // Resto requieren autenticación
                         .anyRequest().authenticated())
 
-                // Política de sesión stateless (no mantener sesiones en el servidor)
+                // Política de sesión stateless (no mantener sesiones)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Agregar el filtro JWT antes del filtro de autenticación estándar
+                // Agregar filtro JWT antes del de autenticación
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     /**
-     * Bean para encriptar contraseñas con BCrypt
+     * Configuración Global de CORS
      */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOrigins(List.of(
+                "http://localhost:4200"   // Angular
+                // agrega más dominios si es necesario
+        ));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Bean del AuthenticationManager para autenticar usuarios
-     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
