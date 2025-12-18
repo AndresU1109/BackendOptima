@@ -2,9 +2,13 @@ package com.hrks.OptimaStock.typeDocument.model;
 
 import jakarta.persistence.*;
 
+import java.io.Serializable;
+
 @Entity
 @Table(name = "type_document")
-public class TypeDocument {
+public class TypeDocument implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

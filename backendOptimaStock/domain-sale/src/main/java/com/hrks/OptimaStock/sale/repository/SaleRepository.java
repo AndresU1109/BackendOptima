@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SaleRepository extends JpaRepository<Sale, Integer> {
+
+    java.util.List<Sale> findByDateTimeBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

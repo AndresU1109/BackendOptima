@@ -6,6 +6,8 @@ import com.hrks.OptimaStock.person.model.Person;
 import com.hrks.OptimaStock.person.repository.PersonRepository;
 import com.hrks.OptimaStock.sale.model.Sale;
 import com.hrks.OptimaStock.sale.repository.SaleRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,13 +16,15 @@ import java.util.Optional;
 @Service
 public class SaleService {
 
+    private static final Logger logger = LoggerFactory.getLogger(SaleService.class);
+
     private final SaleRepository saleRepository;
     private final PersonRepository personRepository;
     private final PaymentMethodRepository paymentMethodRepository;
 
     public SaleService(SaleRepository saleRepository,
-                      PersonRepository personRepository,
-                      PaymentMethodRepository paymentMethodRepository) {
+            PersonRepository personRepository,
+            PaymentMethodRepository paymentMethodRepository) {
         this.saleRepository = saleRepository;
         this.personRepository = personRepository;
         this.paymentMethodRepository = paymentMethodRepository;
@@ -35,10 +39,12 @@ public class SaleService {
     }
 
     public Sale save(Sale sale) {
+        logger.info("Processing sale for client ID: {}", sale.getClient() != null ? sale.getClient().getId() : "N/A");
+
         // Fetch and validate Employee
         if (sale.getEmployee() != null && sale.getEmployee().getId() != null) {
             Person employee = personRepository.findById(sale.getEmployee().getId())
-                    .orElseThrow(() -> new RuntimeException("Employee with id " + 
+                    .orElseThrow(() -> new RuntimeException("Employee with id " +
                             sale.getEmployee().getId() + " not found"));
             sale.setEmployee(employee);
         }
@@ -46,7 +52,7 @@ public class SaleService {
         // Fetch and validate Client
         if (sale.getClient() != null && sale.getClient().getId() != null) {
             Person client = personRepository.findById(sale.getClient().getId())
-                    .orElseThrow(() -> new RuntimeException("Client with id " + 
+                    .orElseThrow(() -> new RuntimeException("Client with id " +
                             sale.getClient().getId() + " not found"));
             sale.setClient(client);
         }
@@ -54,12 +60,15 @@ public class SaleService {
         // Fetch and validate PaymentMethod
         if (sale.getPaymentMethod() != null && sale.getPaymentMethod().getIdPaymentMethod() != null) {
             PaymentMethod paymentMethod = paymentMethodRepository.findById(sale.getPaymentMethod().getIdPaymentMethod())
-                    .orElseThrow(() -> new RuntimeException("PaymentMethod with id " + 
+                    .orElseThrow(() -> new RuntimeException("PaymentMethod with id " +
                             sale.getPaymentMethod().getIdPaymentMethod() + " not found"));
             sale.setPaymentMethod(paymentMethod);
         }
 
-        return saleRepository.save(sale);
+        Sale savedSale = saleRepository.save(sale);
+        logger.info("Sale saved successfully - ID: {}, Total: {}", savedSale.getId(), savedSale.getTotal());
+
+        return savedSale;
     }
 
     public void delete(Integer id) {

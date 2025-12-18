@@ -3,6 +3,7 @@ package com.hrks.OptimaStock;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
@@ -21,9 +22,11 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
                 "com.hrks.OptimaStock.user",
                 "com.hrks.OptimaStock.inventory",
                 "com.hrks.OptimaStock.inventoryMovement",
-                "com.hrks.OptimaStock.price"
+                "com.hrks.OptimaStock.price",
+                "com.hrks.OptimaStock.report"
 
 })
+@EnableCaching
 @EntityScan(basePackages = {
                 "com.hrks.OptimaStock.typeDocument.model",
                 "com.hrks.OptimaStock.typePerson.model",

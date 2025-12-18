@@ -2,9 +2,13 @@ package com.hrks.OptimaStock.typePerson.model;
 
 import jakarta.persistence.*;
 
+import java.io.Serializable;
+
 @Entity
 @Table(name = "type_person")
-public class TypePerson {
+public class TypePerson implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

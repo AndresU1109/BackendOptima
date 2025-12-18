@@ -36,7 +36,7 @@ public class SaleController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Sale> update(@PathVariable Integer id,
-                                       @RequestBody Sale sale) {
+            @RequestBody Sale sale) {
         return saleService.findById(id)
                 .map(s -> {
                     s.setDateTime(sale.getDateTime());

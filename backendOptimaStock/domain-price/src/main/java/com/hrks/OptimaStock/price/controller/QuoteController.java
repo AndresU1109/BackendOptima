@@ -92,25 +92,31 @@ public class QuoteController {
     /**
      * Generar y descargar PDF de cotización (PÚBLICO)
      */
+    /**
+     * Generar y descargar PDF de cotización (ASÍNCRONO)
+     */
     @GetMapping("/{id}/pdf")
-    public ResponseEntity<byte[]> downloadQuotePdf(@PathVariable String id) {
-        try {
-            Quote quote = quoteService.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Cotización no encontrada"));
+    public java.util.concurrent.CompletableFuture<ResponseEntity<byte[]>> downloadQuotePdf(@PathVariable String id) {
+        return quoteService.findById(id)
+                .map(quote -> pdfGenerator.generateQuotePdfAsync(quote) // Llama al método @Async
+                        .thenApply(pdfBytes -> {
+                            HttpHeaders headers = new HttpHeaders();
+                            headers.setContentType(MediaType.APPLICATION_PDF);
+                            try {
+                                headers.setContentDispositionFormData("attachment",
+                                        "cotizacion-" + quote.getQuoteNumber() + ".pdf");
+                            } catch (Exception e) {
+                                // Fallback nombre simple si falla
+                                headers.setContentDispositionFormData("attachment", "cotizacion.pdf");
+                            }
 
-            byte[] pdfBytes = pdfGenerator.generateQuotePdf(quote);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("attachment",
-                    "cotizacion-" + quote.getQuoteNumber() + ".pdf");
-
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(pdfBytes);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+                            return ResponseEntity.ok()
+                                    .headers(headers)
+                                    .body(pdfBytes);
+                        })
+                        .exceptionally(ex -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()))
+                .orElseGet(() -> java.util.concurrent.CompletableFuture
+                        .completedFuture(ResponseEntity.notFound().build()));
     }
 
     /**
@@ -119,7 +125,7 @@ public class QuoteController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLEADO')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<Quote> updateStatus(@PathVariable String id,
-                                               @RequestParam String status) {
+            @RequestParam String status) {
         try {
             Quote updated = quoteService.updateStatus(id, status);
             return ResponseEntity.ok(updated);

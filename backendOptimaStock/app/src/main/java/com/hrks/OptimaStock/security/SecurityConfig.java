@@ -40,20 +40,29 @@ public class SecurityConfig {
                         // Endpoints públicos (autenticación)
                         .requestMatchers("/auth/**").permitAll()
 
-                        // Endpoints públicos de cotizaciones (desde sitio web)
+                        // Endpoints de cotizaciones
+                        // Permitir crear cotizaciones sin login (Cliente externo)
                         .requestMatchers(HttpMethod.POST, "/api/quotes").permitAll()
+                        // Permitir descargar PDF sin login
                         .requestMatchers(HttpMethod.GET, "/api/quotes/*/pdf").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/quotes/*").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/api/quotes/*").authenticated()
                         .requestMatchers("/api/quotes/**").hasAnyRole("ADMIN", "EMPLEADO")
 
                         // Endpoints protegidos por rol
                         .requestMatchers(HttpMethod.DELETE, "/product/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/product/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/product/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/product/**").hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers(HttpMethod.GET, "/product/**").permitAll()
 
                         .requestMatchers("/inventory/**").hasAnyRole("ADMIN", "EMPLEADO")
                         .requestMatchers("/api/inventory-movements/**").hasRole("ADMIN")
+
+                        // Reportes
+                        .requestMatchers("/api/reports/inventory/**").hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers("/api/reports/sales/**").hasRole("ADMIN")
+                        .requestMatchers("/api/reports/top-products/**").hasRole("ADMIN")
+
                         .requestMatchers("/sale/**").hasAnyRole("ADMIN", "EMPLEADO")
                         .requestMatchers("/user/**").hasRole("ADMIN")
 

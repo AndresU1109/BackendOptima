@@ -4,12 +4,15 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
+import java.io.Serializable;
 
 @Entity
 @Table(name = "IVA")
 @Getter
 @Setter
-public class IVA {
+public class IVA implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

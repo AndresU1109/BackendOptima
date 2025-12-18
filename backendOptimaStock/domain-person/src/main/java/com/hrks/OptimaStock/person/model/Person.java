@@ -6,9 +6,13 @@ import jakarta.persistence.*;
 
 import lombok.Getter;
 import lombok.Setter;
+import java.io.Serializable;
+
 @Entity
 @Table(name = "person")
-public class Person {
+public class Person implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,7 +48,7 @@ public class Person {
     }
 
     public Person(String firstName, String lastName, TypeDocument typeDocument, String documentNumber,
-                  String email, String phone, TypePerson typePerson) {
+            String email, String phone, TypePerson typePerson) {
 
         this.firstName = firstName;
         this.lastName = lastName;

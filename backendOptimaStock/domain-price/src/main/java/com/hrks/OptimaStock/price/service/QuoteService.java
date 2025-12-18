@@ -25,6 +25,9 @@ public class QuoteService {
     @Autowired
     private ProductService productService;
 
+    @Autowired
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     public List<Quote> findAll() {
         return quoteRepository.findAll();
     }
@@ -65,14 +68,14 @@ public class QuoteService {
             item.setProductName(product.getName());
             item.setQuantity(itemReq.getQuantity());
             item.setUnitPrice(product.getPrice());
-            
+
             // Obtener IVA del producto (si existe)
             if (product.getIva() != null && product.getIva().getIva() != null) {
                 item.setIva(product.getIva().getIva().intValue());
             } else {
                 item.setIva(0);
             }
-            
+
             item.calculateTotals();
             items.add(item);
         }
@@ -90,10 +93,25 @@ public class QuoteService {
         quote.setValidUntil(LocalDateTime.now().plusDays(15));
         quote.setNotes(request.getNotes());
         quote.setCreatedAt(LocalDateTime.now());
-        quote.setCreatedBy("sistema");
+
+        // Obtener usuario autenticado
+        String currentUser = "sistema";
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getPrincipal())) {
+            currentUser = authentication.getName();
+        }
+        quote.setCreatedBy(currentUser);
+
         quote.setUpdatedAt(LocalDateTime.now());
 
-        return quoteRepository.save(quote);
+        Quote savedQuote = quoteRepository.save(quote);
+
+        // 5. Publicar evento de creación de cotización
+        eventPublisher.publishEvent(new com.hrks.OptimaStock.price.event.QuoteCreatedEvent(this, savedQuote));
+
+        return savedQuote;
     }
 
     /**
@@ -102,10 +120,10 @@ public class QuoteService {
     public Quote updateStatus(String id, String status) {
         Quote quote = quoteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Cotización no encontrada"));
-        
+
         quote.setStatus(status);
         quote.setUpdatedAt(LocalDateTime.now());
-        
+
         return quoteRepository.save(quote);
     }
 
